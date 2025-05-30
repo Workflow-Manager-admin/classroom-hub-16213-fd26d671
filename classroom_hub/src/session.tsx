@@ -29,10 +29,15 @@ function generateUUID(): string {
   });
 }
 
-// Validate 6-character alphanumeric code
+/**
+ * Validate and extract a 6-character classroom code from any "code", invite link, or query param string.
+ * Accepts:
+ *   - A1B2C3
+ *   - https://site.com/join/A1B2C3
+ *   - ?class=A1B2C3
+ */
 function parseInviteLink(input: string): string | null {
-  // Accept full invite links like https://<site>/join/A1B2C3 or ?class=A1B2C3 or A1B2C3 alone
-  const match = input.match(/([A-Z0-9]{6})/i);
+  const match = input.match(/([A-Z0-9]{6})/i);
   return match ? match[1].toUpperCase() : null;
 }
 
