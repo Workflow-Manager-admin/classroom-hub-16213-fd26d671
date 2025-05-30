@@ -3,20 +3,20 @@ import "./App.css";
 import { SessionProvider, useSession, generateUUID, parseInviteLink, SessionData } from "./session";
 
 // PUBLIC_INTERFACE
-// Basic session join form for new flow: enter nickname & class code, or via invite link
+// Form for joining a classroom: persist nickname, temp user id between reloads
 const JoinClassroom: React.FC = () => {
   const { setSession } = useSession();
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(() =>
+    window.localStorage.getItem("nickname") || ""
+  );
   const [classroomInput, setClassroomInput] = useState(""); // can be code or invite
   const [error, setError] = useState<string | null>(null);
 
-  // On first load, try to pre-fill class code from URL (invite link: ?class=CODE or /join/CODE)
   useEffect(() => {
-    // Try to parse invite link query param (?class=CODE)
+    // Pre-fill class code from URL (?class=CODE or /join/CODE)
     const params = new URLSearchParams(window.location.search);
     let code = params.get("class");
     if (!code) {
-      // Check path: e.g., /join/CODE
       const path = window.location.pathname;
       const pathMatch = path.match(/\/join\/([A-Z0-9]{6})/i);
       if (pathMatch) {
@@ -27,6 +27,13 @@ const JoinClassroom: React.FC = () => {
       setClassroomInput(code.toUpperCase());
     }
   }, []);
+
+  // Save nickname persistently on edit
+  useEffect(() => {
+    if (nickname) {
+      window.localStorage.setItem("nickname", nickname);
+    }
+  }, [nickname]);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,11 +47,16 @@ const JoinClassroom: React.FC = () => {
       return;
     }
     setError(null);
-    // Generate temporary user ID
+    // Attempt to persist existing temp user id (lot of re-joins by same browser)
+    let tempUserId = window.localStorage.getItem("tempUserId");
+    if (!tempUserId) {
+      tempUserId = generateUUID();
+      window.localStorage.setItem("tempUserId", tempUserId);
+    }
     const session: SessionData = {
       nickname: nickname.trim(),
       classCode: codeParsed,
-      userId: generateUUID(),
+      userId: tempUserId,
     };
     setSession(session);
   };
@@ -56,7 +68,7 @@ const JoinClassroom: React.FC = () => {
           <div className="subtitle">Jump into a classroom instantly!</div>
           <h1 className="title">Classroom Insider</h1>
           <div className="description">
-            Join a classroom by entering a 6-digit code, paste an invite link, or pick your nickname.<br/>
+            Join a classroom by entering a 6-digit code, paste an invite link, or pick your nickname.<br />
             Example code: <b>A1B2C3</b> &nbsp;or link: <i>https://site.com/join/A1B2C3</i>
           </div>
           <form
@@ -130,11 +142,21 @@ const JoinClassroom: React.FC = () => {
 };
 
 // PUBLIC_INTERFACE
-// Minimal placeholder for "dashboard"/classroom session after join (replace with full feature later)
+// Main classroom after join: shows active session, allows leaving session, and displays active user identity
 const ClassroomSession: React.FC = () => {
   const { session, clearSession } = useSession();
   if (!session) return null;
-  const { nickname, classCode } = session;
+  const { nickname, classCode, userId } = session;
+
+  useEffect(() => {
+    // Ensure that nickname/tempId is always kept in localStorage for persistence (even if session clears)
+    if (nickname) {
+      window.localStorage.setItem("nickname", nickname);
+    }
+    if (userId) {
+      window.localStorage.setItem("tempUserId", userId);
+    }
+  }, [nickname, userId]);
 
   return (
     <div className="app">
@@ -144,9 +166,22 @@ const ClassroomSession: React.FC = () => {
             <div className="logo">
               <span className="logo-symbol">*</span> Classroom Insider
             </div>
-            <button className="btn" onClick={clearSession} style={{ minWidth: 120 }}>
-              Leave Session
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{
+                fontSize: "1rem",
+                fontWeight: 500,
+                color: "#fff",
+                background: "#4F8CFF",
+                padding: "4px 14px",
+                borderRadius: 16,
+                letterSpacing: 1,
+              }}>
+                {nickname}
+              </div>
+              <button className="btn" onClick={clearSession} style={{ minWidth: 120 }}>
+                Leave Session
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -160,6 +195,10 @@ const ClassroomSession: React.FC = () => {
             <div className="description">
               <b>This is your session classroom! 🎉</b>
               <br />
+              Your Anonymous ID (per browser): <span style={{
+                color: "#999", background: "#222", fontSize: "0.96em", borderRadius: 4, padding: "2px 8px", marginLeft: 3
+              }}>{userId?.slice(0, 8) + "…"}</span>
+              <br /><br />
               (Here will be the chat, bulletin board, notebook, and group projects.)
             </div>
           </div>
@@ -170,9 +209,8 @@ const ClassroomSession: React.FC = () => {
 };
 
 // PUBLIC_INTERFACE
-// Root App manages session state, via SessionProvider/context/localStorage
+// Root App manages session state: all logic is via SessionProvider/context, no authentication logic
 const App: React.FC = () => {
-  // Use SessionProvider at top; useSession for state
   return (
     <SessionProvider>
       <AppInner />
