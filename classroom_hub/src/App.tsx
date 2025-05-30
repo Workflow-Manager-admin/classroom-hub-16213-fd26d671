@@ -3,17 +3,18 @@ import "./App.css";
 import { SessionProvider, useSession, generateUUID, parseInviteLink, SessionData } from "./session";
 
 // PUBLIC_INTERFACE
-// Form for joining a classroom: persist nickname, temp user id between reloads
+// Form for joining a classroom: persist nickname, temp user id between reloads, and UX edge cases
 const JoinClassroom: React.FC = () => {
   const { setSession } = useSession();
   const [nickname, setNickname] = useState(() =>
-    window.localStorage.getItem("nickname") || ""
+    (typeof window !== "undefined" && window.localStorage.getItem("nickname")) || ""
   );
   const [classroomInput, setClassroomInput] = useState(""); // can be code or invite
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Pre-fill class code from URL (?class=CODE or /join/CODE)
+    if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     let code = params.get("class");
     if (!code) {
@@ -35,31 +36,45 @@ const JoinClassroom: React.FC = () => {
     }
   }, [nickname]);
 
-  const handleJoin = (e: React.FormEvent) => {
+  // PUBLIC_INTERFACE
+  function handleJoin(e: React.FormEvent) {
     e.preventDefault();
-    if (!nickname.trim() || !classroomInput.trim()) {
-      setError("Enter both your nickname and a classroom code or invite link.");
+    const trimmedNick = nickname.trim();
+    const trimmedInput = classroomInput.trim();
+    if (trimmedNick.length < 2) {
+      setError("Nickname must be at least 2 characters.");
       return;
     }
-    const codeParsed = parseInviteLink(classroomInput.trim());
+    if (!trimmedInput) {
+      setError("Please enter a classroom code or invite link.");
+      return;
+    }
+    // Defensive: parse for valid classCode
+    const codeParsed = parseInviteLink(trimmedInput);
     if (!codeParsed) {
       setError("Classroom code or invite link is not valid (6 alphanumeric).");
       return;
     }
     setError(null);
-    // Attempt to persist existing temp user id (lot of re-joins by same browser)
+    // Attempt to persist existing temp user id (for repeat browser joins)
     let tempUserId = window.localStorage.getItem("tempUserId");
-    if (!tempUserId) {
+    if (!tempUserId || typeof tempUserId !== "string" || tempUserId.length < 8) {
       tempUserId = generateUUID();
       window.localStorage.setItem("tempUserId", tempUserId);
     }
     const session: SessionData = {
-      nickname: nickname.trim(),
+      nickname: trimmedNick,
       classCode: codeParsed,
       userId: tempUserId,
     };
     setSession(session);
-  };
+  }
+
+  // UX: clear error on input change
+  useEffect(() => {
+    setError(null);
+    // eslint-disable-next-line
+  }, [nickname, classroomInput]);
 
   return (
     <main>
@@ -95,6 +110,7 @@ const JoinClassroom: React.FC = () => {
                 required
                 autoFocus
                 data-testid="nickname-input"
+                autoComplete="nickname"
               />
             </label>
             <label>
@@ -114,6 +130,7 @@ const JoinClassroom: React.FC = () => {
                 }}
                 required
                 data-testid="classcode-input"
+                autoComplete="off"
               />
             </label>
             {error && (
@@ -127,6 +144,7 @@ const JoinClassroom: React.FC = () => {
                   fontWeight: 500,
                 }}
                 data-testid="error-msg"
+                aria-live="polite"
               >
                 {error}
               </div>
