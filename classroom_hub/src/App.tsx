@@ -1,27 +1,52 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
+import { SessionProvider, useSession, generateUUID, parseInviteLink, SessionData } from "./session";
 
 // PUBLIC_INTERFACE
-// Basic session join form for new flow: enter nickname & class code
-const JoinClassroom: React.FC<{ onJoin: (nickname: string, code: string) => void }> = ({
-  onJoin,
-}) => {
+// Basic session join form for new flow: enter nickname & class code, or via invite link
+const JoinClassroom: React.FC = () => {
+  const { setSession } = useSession();
   const [nickname, setNickname] = useState("");
-  const [classCode, setClassCode] = useState("");
+  const [classroomInput, setClassroomInput] = useState(""); // can be code or invite
   const [error, setError] = useState<string | null>(null);
+
+  // On first load, try to pre-fill class code from URL (invite link: ?class=CODE or /join/CODE)
+  useEffect(() => {
+    // Try to parse invite link query param (?class=CODE)
+    const params = new URLSearchParams(window.location.search);
+    let code = params.get("class");
+    if (!code) {
+      // Check path: e.g., /join/CODE
+      const path = window.location.pathname;
+      const pathMatch = path.match(/\/join\/([A-Z0-9]{6})/i);
+      if (pathMatch) {
+        code = pathMatch[1];
+      }
+    }
+    if (code && /^[A-Z0-9]{6}$/i.test(code)) {
+      setClassroomInput(code.toUpperCase());
+    }
+  }, []);
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nickname.trim() || !classCode.trim()) {
-      setError("Enter both your nickname and a classroom code.");
+    if (!nickname.trim() || !classroomInput.trim()) {
+      setError("Enter both your nickname and a classroom code or invite link.");
       return;
     }
-    if (!/^[a-zA-Z0-9]{6}$/.test(classCode)) {
-      setError("Classroom code must be 6 alphanumeric characters.");
+    const codeParsed = parseInviteLink(classroomInput.trim());
+    if (!codeParsed) {
+      setError("Classroom code or invite link is not valid (6 alphanumeric).");
       return;
     }
     setError(null);
-    onJoin(nickname.trim(), classCode.trim());
+    // Generate temporary user ID
+    const session: SessionData = {
+      nickname: nickname.trim(),
+      classCode: codeParsed,
+      userId: generateUUID(),
+    };
+    setSession(session);
   };
 
   return (
@@ -31,9 +56,20 @@ const JoinClassroom: React.FC<{ onJoin: (nickname: string, code: string) => void
           <div className="subtitle">Jump into a classroom instantly!</div>
           <h1 className="title">Classroom Insider</h1>
           <div className="description">
-            Join a classroom by entering a 6-digit code and pick your nickname.
+            Join a classroom by entering a 6-digit code, paste an invite link, or pick your nickname.<br/>
+            Example code: <b>A1B2C3</b> &nbsp;or link: <i>https://site.com/join/A1B2C3</i>
           </div>
-          <form style={{ maxWidth: 350, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }} onSubmit={handleJoin}>
+          <form
+            style={{
+              maxWidth: 375,
+              margin: "0 auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+            onSubmit={handleJoin}
+            autoComplete="off"
+          >
             <label>
               Nickname
               <input
@@ -45,24 +81,47 @@ const JoinClassroom: React.FC<{ onJoin: (nickname: string, code: string) => void
                 maxLength={20}
                 style={{ width: "100%", borderRadius: 6, padding: 9, marginTop: 3 }}
                 required
+                autoFocus
+                data-testid="nickname-input"
               />
             </label>
             <label>
-              Classroom Code
+              Classroom Code or Invite Link
               <input
                 type="text"
-                value={classCode}
-                placeholder="E.g. A1B2C3"
-                onChange={e => setClassCode(e.target.value.toUpperCase())}
-                maxLength={6}
-                style={{ width: "100%", borderRadius: 6, padding: 9, marginTop: 3, letterSpacing: 2 }}
+                value={classroomInput}
+                placeholder="E.g. A1B2C3 or paste invite link"
+                onChange={e => setClassroomInput(e.target.value)}
+                maxLength={60}
+                style={{
+                  width: "100%",
+                  borderRadius: 6,
+                  padding: 9,
+                  marginTop: 3,
+                  letterSpacing: 2,
+                }}
                 required
+                data-testid="classcode-input"
               />
             </label>
             {error && (
-              <div style={{ color: "#FF6F61", background: "#FFE4E1", borderRadius: 6, padding: 7, margin: "6px 0", fontWeight: 500 }}>{error}</div>
+              <div
+                style={{
+                  color: "#FF6F61",
+                  background: "#FFE4E1",
+                  borderRadius: 6,
+                  padding: 7,
+                  margin: "6px 0",
+                  fontWeight: 500,
+                }}
+                data-testid="error-msg"
+              >
+                {error}
+              </div>
             )}
-            <button className="btn btn-large" style={{ marginTop: 8 }} type="submit">Join Classroom</button>
+            <button className="btn btn-large" style={{ marginTop: 8 }} type="submit">
+              Join Classroom
+            </button>
           </form>
         </div>
       </div>
@@ -72,56 +131,58 @@ const JoinClassroom: React.FC<{ onJoin: (nickname: string, code: string) => void
 
 // PUBLIC_INTERFACE
 // Minimal placeholder for "dashboard"/classroom session after join (replace with full feature later)
-const ClassroomSession: React.FC<{ nickname: string; classCode: string; onLeave: () => void }> = ({
-  nickname,
-  classCode,
-  onLeave,
-}) => (
-  <div className="app">
-    <nav className="navbar">
-      <div className="container">
-        <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-          <div className="logo">
-            <span className="logo-symbol">*</span> Classroom Insider
-          </div>
-          <button className="btn" onClick={onLeave} style={{ minWidth: 120 }}>
-            Leave Session
-          </button>
-        </div>
-      </div>
-    </nav>
-    <main>
-      <div className="container">
-        <div className="hero">
-          <div className="subtitle">
-            Welcome, <span style={{ color: "#4F8CFF" }}>{nickname}</span>!
-          </div>
-          <h1 className="title">Classroom: {classCode}</h1>
-          <div className="description">
-            <b>This is your session classroom! 🎉</b>
-            <br />
-            (Here will be the chat, bulletin board, notebook, and group projects.)
+const ClassroomSession: React.FC = () => {
+  const { session, clearSession } = useSession();
+  if (!session) return null;
+  const { nickname, classCode } = session;
+
+  return (
+    <div className="app">
+      <nav className="navbar">
+        <div className="container">
+          <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+            <div className="logo">
+              <span className="logo-symbol">*</span> Classroom Insider
+            </div>
+            <button className="btn" onClick={clearSession} style={{ minWidth: 120 }}>
+              Leave Session
+            </button>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
-);
+      </nav>
+      <main>
+        <div className="container">
+          <div className="hero">
+            <div className="subtitle">
+              Welcome, <span style={{ color: "#4F8CFF" }}>{nickname}</span>!
+            </div>
+            <h1 className="title">Classroom: {classCode}</h1>
+            <div className="description">
+              <b>This is your session classroom! 🎉</b>
+              <br />
+              (Here will be the chat, bulletin board, notebook, and group projects.)
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
 
 // PUBLIC_INTERFACE
-// Root App manages session state (no authentication)
+// Root App manages session state, via SessionProvider/context/localStorage
 const App: React.FC = () => {
-  const [session, setSession] = useState<{ nickname: string; classCode: string } | null>(null);
-
-  return session ? (
-    <ClassroomSession
-      nickname={session.nickname}
-      classCode={session.classCode}
-      onLeave={() => setSession(null)}
-    />
-  ) : (
-    <JoinClassroom onJoin={(nickname, classCode) => setSession({ nickname, classCode })} />
+  // Use SessionProvider at top; useSession for state
+  return (
+    <SessionProvider>
+      <AppInner />
+    </SessionProvider>
   );
+};
+
+const AppInner: React.FC = () => {
+  const { session } = useSession();
+  return session ? <ClassroomSession /> : <JoinClassroom />;
 };
 
 export default App;
