@@ -160,17 +160,17 @@ const JoinClassroom: React.FC = () => {
 };
 
 // PUBLIC_INTERFACE
-// Main classroom after join: shows active session, allows leaving session, and displays active user identity
+// Main classroom after join: shows active session, allows leaving session, and displays active user identity.
 const ClassroomSession: React.FC = () => {
   const { session, clearSession } = useSession();
 
-  // Always run the hook at the top level!
+  // Sync session to nickname and tempUserId for cross-reload consistency
   useEffect(() => {
     if (session) {
       if (session.nickname) {
         window.localStorage.setItem("nickname", session.nickname);
       }
-      if (session.userId) {
+      if (session.userId && session.userId.length >= 8) {
         window.localStorage.setItem("tempUserId", session.userId);
       }
     }
@@ -199,7 +199,13 @@ const ClassroomSession: React.FC = () => {
               }}>
                 {nickname}
               </div>
-              <button className="btn" onClick={clearSession} style={{ minWidth: 120 }}>
+              <button
+                className="btn"
+                onClick={clearSession}
+                style={{ minWidth: 120 }}
+                type="button"
+                aria-label="Leave classroom session"
+              >
                 Leave Session
               </button>
             </div>
@@ -230,7 +236,7 @@ const ClassroomSession: React.FC = () => {
 };
 
 // PUBLIC_INTERFACE
-// Root App manages session state: all logic is via SessionProvider/context, no authentication logic
+// Root App manages session state: all logic is via SessionProvider/context, NO AUTHENTICATION logic, no Firebase residue.
 const App: React.FC = () => {
   return (
     <SessionProvider>
@@ -239,6 +245,7 @@ const App: React.FC = () => {
   );
 };
 
+// Internal: Renders join form or classroom view based on session.
 const AppInner: React.FC = () => {
   const { session } = useSession();
   return session ? <ClassroomSession /> : <JoinClassroom />;
