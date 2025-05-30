@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 
+// PUBLIC_INTERFACE
 // Basic session join form for new flow: enter nickname & class code
 const JoinClassroom: React.FC<{ onJoin: (nickname: string, code: string) => void }> = ({
   onJoin,
@@ -69,6 +70,7 @@ const JoinClassroom: React.FC<{ onJoin: (nickname: string, code: string) => void
   );
 };
 
+// PUBLIC_INTERFACE
 // Minimal placeholder for "dashboard"/classroom session after join (replace with full feature later)
 const ClassroomSession: React.FC<{ nickname: string; classCode: string; onLeave: () => void }> = ({
   nickname,
@@ -106,6 +108,7 @@ const ClassroomSession: React.FC<{ nickname: string; classCode: string; onLeave:
   </div>
 );
 
+// PUBLIC_INTERFACE
 // Root App manages session state (no authentication)
 const App: React.FC = () => {
   const [session, setSession] = useState<{ nickname: string; classCode: string } | null>(null);
