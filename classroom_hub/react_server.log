@@ -46,3 +46,11 @@ ERROR in main
 Module not found: Error: Can't resolve '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub/src/index.js' in '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub'
 
 webpack compiled with 1 error
+Compiling...
+Failed to compile.
+
+Module not found: Error: Can't resolve '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub/src/index.js' in '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub'
+ERROR in main
+Module not found: Error: Can't resolve '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub/src/index.js' in '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub'
+
+webpack compiled with 1 error
