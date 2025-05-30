@@ -145,18 +145,21 @@ const JoinClassroom: React.FC = () => {
 // Main classroom after join: shows active session, allows leaving session, and displays active user identity
 const ClassroomSession: React.FC = () => {
   const { session, clearSession } = useSession();
+
+  // Always run the hook at the top level!
+  useEffect(() => {
+    if (session) {
+      if (session.nickname) {
+        window.localStorage.setItem("nickname", session.nickname);
+      }
+      if (session.userId) {
+        window.localStorage.setItem("tempUserId", session.userId);
+      }
+    }
+  }, [session]);
+
   if (!session) return null;
   const { nickname, classCode, userId } = session;
-
-  useEffect(() => {
-    // Ensure that nickname/tempId is always kept in localStorage for persistence (even if session clears)
-    if (nickname) {
-      window.localStorage.setItem("nickname", nickname);
-    }
-    if (userId) {
-      window.localStorage.setItem("tempUserId", userId);
-    }
-  }, [nickname, userId]);
 
   return (
     <div className="app">
