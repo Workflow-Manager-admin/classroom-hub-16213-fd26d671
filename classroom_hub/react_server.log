@@ -24,3 +24,10 @@ webpack compiled successfully
 Compiling...
 Compiled successfully!
 webpack compiled successfully
+Failed to compile.
+
+Module not found: Error: Can't resolve './App' in '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub/src'
+ERROR in ./src/index.js 7:0-24
+Module not found: Error: Can't resolve './App' in '/home/kavia/workspace/code-generation/classroom-hub-16213-fd26d671/classroom_hub/src'
+
+webpack compiled with 1 error
