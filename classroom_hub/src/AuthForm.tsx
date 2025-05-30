@@ -84,26 +84,26 @@ export const AuthForm: React.FC = () => {
     setRepeatPwd("");
   };
 
-  // Styling: playful, informal, bright colors
+  // Styling: Use CSS classes instead of inline styles for playful/authentication look
   return (
-    <div style={styles.bg}>
-      <form style={styles.card} onSubmit={handleSubmit} autoComplete="off">
-        <div style={styles.header}>
-          <span style={styles.icon}>🎓</span>
-          <h2 style={styles.title}>
+    <div className="auth-bg">
+      <form className="auth-card" onSubmit={handleSubmit} autoComplete="off">
+        <div className="auth-header">
+          <span className="auth-icon">🎓</span>
+          <h2 className="auth-title">
             {mode === "login" ? "Welcome Back!" : "Create Your Account"}
           </h2>
-          <p style={styles.subtitle}>
+          <p className="auth-subtitle">
             {mode === "login"
               ? "Ready for another adventure? Log in below!"
               : "Let's get you all set for a stellar classroom experience!"}
           </p>
         </div>
 
-        <label style={styles.label}>
+        <label className="auth-label">
           Email
           <input
-            style={styles.input}
+            className="auth-input"
             type="email"
             placeholder="you@school.edu"
             value={email}
@@ -114,10 +114,10 @@ export const AuthForm: React.FC = () => {
           />
         </label>
 
-        <label style={styles.label}>
+        <label className="auth-label">
           Password
           <input
-            style={styles.input}
+            className="auth-input"
             type="password"
             placeholder={mode === "login" ? "Your super-secret password" : "Pick a strong one!"}
             value={password}
@@ -129,10 +129,10 @@ export const AuthForm: React.FC = () => {
         </label>
 
         {mode === "register" && (
-          <label style={styles.label}>
+          <label className="auth-label">
             Repeat Password
             <input
-              style={styles.input}
+              className="auth-input"
               type="password"
               placeholder="Just to be sure..."
               value={repeatPwd}
@@ -145,12 +145,12 @@ export const AuthForm: React.FC = () => {
         )}
 
         {error && (
-          <div style={styles.errorBox} role="alert">
+          <div className="auth-error-box" role="alert">
             {error}
           </div>
         )}
 
-        <button style={styles.button} className="btn btn-large" type="submit" disabled={loading}>
+        <button className="auth-btn btn btn-large" type="submit" disabled={loading}>
           {loading
             ? mode === "login"
               ? "Logging in..."
@@ -161,18 +161,28 @@ export const AuthForm: React.FC = () => {
         </button>
 
         {/* Toggle login/register */}
-        <div style={styles.toggleRow}>
+        <div className="auth-toggle-row">
           {mode === "login" ? (
             <>
               <span>No account?</span>
-              <button type="button" style={styles.toggleBtn} onClick={toggleMode} disabled={loading}>
+              <button
+                type="button"
+                className="auth-toggle-btn"
+                onClick={toggleMode}
+                disabled={loading}
+              >
                 Register
               </button>
             </>
           ) : (
             <>
               <span>Already joined?</span>
-              <button type="button" style={styles.toggleBtn} onClick={toggleMode} disabled={loading}>
+              <button
+                type="button"
+                className="auth-toggle-btn"
+                onClick={toggleMode}
+                disabled={loading}
+              >
                 Log In
               </button>
             </>

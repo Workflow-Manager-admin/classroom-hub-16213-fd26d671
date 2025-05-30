@@ -1,5 +1,6 @@
 import React from "react";
 import "./App.css";
+import "./auth-styles.scss";
 import { AuthProvider, useAuth } from "./AuthContext";
 import AuthForm from "./AuthForm";
 
